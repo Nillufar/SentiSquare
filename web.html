@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SemiLearn - Korean Learning Platform</title>
+<style>
+/* GENERAL */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #2A2D9B;
+  color: white;
+}
+
+/* HEADER */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  background: #2A2D9B;
+}
+.logo { font-size: 28px; color: #7FC8FF; font-weight: bold; }
+.cta { background: #7FC8FF; padding: 10px 20px; border-radius: 8px; text-decoration: none; }
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 80px 20px;
+}
+.hero small {
+  font-size: 14px;
+  color: #ccc;
+  letter-spacing: 2px;
+}
+.hero h1 {
+  font-size: 48px;
+  margin: 20px 0;
+}
+.hero p {
+  font-size: 18px;
+  margin-bottom: 30px;
+}
+.hero-buttons a {
+  margin: 0 10px;
+  padding: 12px 28px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  transition: 0.3s;
+}
+.btn-primary { background: #7FC8FF; }
+.btn-primary:hover { background: #63b0e0; }
+.btn-outline { border: 2px solid #7FC8FF; }
+.btn-outline:hover { background: rgba(127,200,255,0.1); }
+
+/* ARTICLES SECTION */
+.articles-section {
+  padding: 60px 20px;
+  text-align: center;
+}
+.articles-section h2 { color: #AAC4F5; margin-bottom: 20px; font-size: 36px; }
+.articles-section p { margin-bottom: 40px; font-size: 18px; }
+.articles-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.article-card {
+  background: rgba(255,255,255,0.1);
+  padding: 20px;
+  border-radius: 12px;
+  min-width: 200px;
+  max-width: 250px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: all 0.5s ease;
+}
+
+/* STATS SECTION */
+.stats-section {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 60px 20px;
+  flex-wrap: wrap;
+}
+.stat-card {
+  background: rgba(255,255,255,0.1);
+  padding: 30px;
+  border-radius: 16px;
+  min-width: 200px;
+  max-width: 250px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: all 0.5s ease;
+}
+
+/* SCROLL ANIMATION */
+.show {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+.article-card, .stat-card {
+  opacity: 0;
+  transform: translateY(50px);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SemiLearn</div>
+  <a href="#" class="cta">Get Started</a>
+</header>
+
+<section class="hero">
+  <small>WELCOME TO SEMI LEARN</small>
+  <h1>Learn Korean effectively with articles.</h1>
+  <p>Track your progress, expand your vocabulary, and spend time wisely on learning Korean.</p>
+  <div class="hero-buttons">
+    <a href="#" class="btn-primary">Get Started</a>
+    <a href="#" class="btn-outline">View Articles</a>
+  </div>
+</section>
+
+<section class="stats-section">
+  <div class="stat-card">
+    <h3>Articles List</h3>
+    <p>Browse articles by your level and interest.</p>
+  </div>
+  <div class="stat-card">
+    <h3>Vocabulary Learned</h3>
+    <p>Track and manage the words you have learned.</p>
+  </div>
+  <div class="stat-card">
+    <h3>Study Time Tracker</h3>
+    <p>Monitor the time you spend studying Korean.</p>
+  </div>
+</section>
+
+<script>
+const cards = document.querySelectorAll('.article-card, .stat-card');
+
+function reveal() {
+  cards.forEach(card => {
+    const top = card.getBoundingClientRect().top;
+    const windowHeight = window.innerHeight;
+    if(top < windowHeight - 50) {
+      card.classList.add('show');
+    }
+  });
+}
+
+window.addEventListener('scroll', reveal);
+window.addEventListener('load', reveal);
+</script>
+
+</body>
+</html>
