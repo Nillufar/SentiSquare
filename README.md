@@ -1,4 +1,4 @@
-# SentiSquare
+# SentiLearn 🇰🇷
 A Korean language–learning platform that uses AI to simplify news articles for different TOPIK (Test of Proficiency in Korean) levels.
 
 ## Features
