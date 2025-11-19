@@ -1,0 +1,430 @@
+{% extends 'articles/base.html' %}
+
+{% block title %}{{ article.title }} - SentiSquare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .article-header {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .article-header h2 {
+        color: #333;
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+
+    .article-info {
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+    }
+
+    .controls-panel {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .level-slider-container {
+        margin-bottom: 25px;
+    }
+
+    .level-slider-container label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .slider-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .slider {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: #d3d3d3;
+        outline: none;
+        -webkit-appearance: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #667eea;
+        cursor: pointer;
+    }
+
+    .slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #667eea;
+        cursor: pointer;
+        border: none;
+    }
+
+    .level-display {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #667eea;
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .text-panel {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .text-panel h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #667eea;
+    }
+
+    .text-content {
+        line-height: 1.8;
+        font-size: 1.05rem;
+        color: #333;
+        white-space: pre-wrap;
+    }
+
+    .korean-text {
+        font-size: 1.1rem;
+    }
+
+    .sentiment-panel {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .sentiment-panel h3 {
+        color: #667eea;
+        margin-bottom: 20px;
+    }
+
+    .sentiment-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .sentiment-item {
+        margin-bottom: 10px;
+    }
+
+    .sentiment-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .sentiment-bar {
+        height: 20px;
+        background: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .sentiment-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.5s;
+        border-radius: 10px;
+    }
+
+    .vocabulary-panel {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .vocabulary-panel h3 {
+        color: #667eea;
+        margin-bottom: 20px;
+    }
+
+    .vocab-list {
+        list-style: none;
+    }
+
+    .vocab-item {
+        padding: 15px;
+        margin-bottom: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+        border-left: 4px solid #667eea;
+    }
+
+    .vocab-word {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .vocab-definition {
+        color: #666;
+        margin-bottom: 8px;
+    }
+
+    .vocab-example {
+        color: #888;
+        font-style: italic;
+        font-size: 0.95rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+
+    .warning {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+    }
+
+    @media (max-width: 768px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'overview' %}" class="btn btn-secondary" style="margin-bottom: 20px;">← Back to Overview</a>
+
+<div class="article-header">
+    <h2>{{ article.title }}</h2>
+    <div class="article-info">
+        <strong>Category:</strong> {{ article.category.display_name }} |
+        <strong>Published:</strong> {{ article.created_at|date:"F d, Y" }}
+        {% if article.source_url %}
+        | <a href="{{ article.source_url }}" target="_blank">View Original</a>
+        {% endif %}
+    </div>
+
+    {% if not article.is_processed %}
+    <div class="warning">
+        <strong>Note:</strong> This article hasn't been processed yet. Click the button below to process it through AI.
+    </div>
+    <form method="post" action="{% url 'process_article' article.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn">Process Article with AI</button>
+    </form>
+    {% endif %}
+</div>
+
+{% if article.is_processed %}
+<div class="controls-panel">
+    <div class="level-slider-container">
+        <label for="level-slider">TOPIK Level:</label>
+        <div class="slider-wrapper">
+            <input type="range" min="1" max="6" value="{{ current_level }}" class="slider" id="level-slider">
+            <div class="level-display" id="level-display">Level {{ current_level }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="content-grid">
+    <div class="text-panel">
+        <h3>Simplified Korean (Level <span id="korean-level">{{ current_level }}</span>)</h3>
+        <div class="text-content korean-text" id="korean-text">
+            {% if processed %}
+                {{ processed.simplified_text }}
+            {% else %}
+                <div class="loading">Loading...</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="text-panel">
+        <h3>English Translation</h3>
+        <div class="text-content" id="english-text">
+            {% if processed %}
+                {{ processed.english_translation }}
+            {% else %}
+                <div class="loading">Loading...</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if sentiment %}
+<div class="sentiment-panel">
+    <h3>Article Sentiment Analysis</h3>
+    <div class="sentiment-bars">
+        <div class="sentiment-item">
+            <div class="sentiment-label">
+                <span>Positive</span>
+                <span>{{ sentiment.positive_score|floatformat:0 }}%</span>
+            </div>
+            <div class="sentiment-bar">
+                <div class="sentiment-fill" style="width: {{ sentiment.positive_score|floatformat:0 }}%"></div>
+            </div>
+        </div>
+
+        <div class="sentiment-item">
+            <div class="sentiment-label">
+                <span>Technical</span>
+                <span>{{ sentiment.technical_score|floatformat:0 }}%</span>
+            </div>
+            <div class="sentiment-bar">
+                <div class="sentiment-fill" style="width: {{ sentiment.technical_score|floatformat:0 }}%"></div>
+            </div>
+        </div>
+
+        <div class="sentiment-item">
+            <div class="sentiment-label">
+                <span>Social Focus</span>
+                <span>{{ sentiment.social_score|floatformat:0 }}%</span>
+            </div>
+            <div class="sentiment-bar">
+                <div class="sentiment-fill" style="width: {{ sentiment.social_score|floatformat:0 }}%"></div>
+            </div>
+        </div>
+
+        <div class="sentiment-item">
+            <div class="sentiment-label">
+                <span>Educational</span>
+                <span>{{ sentiment.educational_score|floatformat:0 }}%</span>
+            </div>
+            <div class="sentiment-bar">
+                <div class="sentiment-fill" style="width: {{ sentiment.educational_score|floatformat:0 }}%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="vocabulary-panel">
+    <h3>Essential Vocabulary (Level <span id="vocab-level">{{ current_level }}</span>)</h3>
+    <ul class="vocab-list" id="vocabulary-list">
+        {% if vocabulary %}
+            {% for word in vocabulary %}
+            <li class="vocab-item">
+                <div class="vocab-word">{{ word.word }}</div>
+                <div class="vocab-definition">{{ word.definition }}</div>
+                {% if word.example_sentence %}
+                <div class="vocab-example">{{ word.example_sentence }}</div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        {% else %}
+            <div class="loading">Loading vocabulary...</div>
+        {% endif %}
+    </ul>
+</div>
+
+{% else %}
+<div class="text-panel">
+    <h3>Original Text</h3>
+    <div class="text-content korean-text">
+        {{ article.original_text }}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if article.is_processed %}
+<script>
+    const slider = document.getElementById('level-slider');
+    const levelDisplay = document.getElementById('level-display');
+    const koreanText = document.getElementById('korean-text');
+    const englishText = document.getElementById('english-text');
+    const vocabularyList = document.getElementById('vocabulary-list');
+    const koreanLevel = document.getElementById('korean-level');
+    const vocabLevel = document.getElementById('vocab-level');
+
+    slider.addEventListener('input', async function() {
+        const level = this.value;
+        levelDisplay.textContent = 'Level ' + level;
+        koreanLevel.textContent = level;
+        vocabLevel.textContent = level;
+
+        // Show loading state
+        koreanText.innerHTML = '<div class="loading">Loading...</div>';
+        englishText.innerHTML = '<div class="loading">Loading...</div>';
+        vocabularyList.innerHTML = '<div class="loading">Loading vocabulary...</div>';
+
+        // Fetch content for this level
+        try {
+            const response = await fetch(`/article/{{ article.id }}/level/${level}/`);
+            const data = await response.json();
+
+            if (data.success) {
+                koreanText.textContent = data.simplified_text;
+                englishText.textContent = data.english_translation;
+
+                // Update vocabulary
+                if (data.vocabulary && data.vocabulary.length > 0) {
+                    vocabularyList.innerHTML = '';
+                    data.vocabulary.forEach(word => {
+                        const li = document.createElement('li');
+                        li.className = 'vocab-item';
+                        li.innerHTML = `
+                            <div class="vocab-word">${word.word}</div>
+                            <div class="vocab-definition">${word.definition}</div>
+                            ${word.example_sentence ? `<div class="vocab-example">${word.example_sentence}</div>` : ''}
+                        `;
+                        vocabularyList.appendChild(li);
+                    });
+                } else {
+                    vocabularyList.innerHTML = '<div class="loading">No vocabulary for this level yet.</div>';
+                }
+            } else {
+                koreanText.innerHTML = '<div class="warning">Content not available for this level yet.</div>';
+                englishText.innerHTML = '<div class="warning">Translation not available for this level yet.</div>';
+                vocabularyList.innerHTML = '<div class="warning">Vocabulary not available for this level yet.</div>';
+            }
+        } catch (error) {
+            console.error('Error fetching level content:', error);
+            koreanText.innerHTML = '<div class="warning">Error loading content.</div>';
+            englishText.innerHTML = '<div class="warning">Error loading translation.</div>';
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

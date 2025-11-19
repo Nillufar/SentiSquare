@@ -1,0 +1,12 @@
+[project]
+name = "sentisquare"
+version = "0.1.0"
+description = "Korean language learning platform with AI-powered article simplification"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=5.0",
+    "ollama>=0.3.0",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+]
