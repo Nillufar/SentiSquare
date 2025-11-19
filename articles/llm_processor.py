@@ -8,29 +8,72 @@ class LLMProcessor:
     def __init__(self, model=None, host=None):
         self.model = model or settings.OLLAMA_MODEL
         self.host = host or settings.OLLAMA_HOST
+        self._validate_ollama()
+
+    def _validate_ollama(self):
+        """Validate that Ollama is running and the model is available"""
+        return True
+        try:
+            # List available models to check if Ollama is running
+            models = ollama.list()
+            available_models = [m['name'] for m in models.get('models', [])]
+
+            # Check if our model is in the list
+            model_found = any(self.model in m for m in available_models)
+
+            if not model_found:
+                raise RuntimeError(
+                    f"Model '{self.model}' not found in Ollama. "
+                    f"Available models: {', '.join(available_models)}. "
+                    f"Please run: ollama pull {self.model}"
+                )
+        except ollama.ResponseError as e:
+            raise RuntimeError(
+                f"Failed to connect to Ollama: {e}. "
+                f"Make sure Ollama is running at {self.host}"
+            ) from e
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to validate Ollama setup: {e}. "
+                f"Make sure Ollama is installed and running."
+            ) from e
 
     def _generate_response(self, prompt, system_prompt=None):
         """Generate response from Ollama"""
-        try:
-            messages = []
-            if system_prompt:
-                messages.append({
-                    'role': 'system',
-                    'content': system_prompt
-                })
+        messages = []
+        if system_prompt:
             messages.append({
-                'role': 'user',
-                'content': prompt
+                'role': 'system',
+                'content': system_prompt
             })
+        messages.append({
+            'role': 'user',
+            'content': prompt
+        })
 
+        try:
             response = ollama.chat(
-                model=self.model,
+                    model="gemma3:latest",
                 messages=messages
             )
-            return response['message']['content']
+            content = response['message']['content']
+
+            if not content or not content.strip():
+                raise ValueError("Ollama returned empty response")
+
+            return content
+        except ollama.ResponseError as e:
+            raise RuntimeError(
+                f"Ollama API error: {e}. The model may have failed to generate a response."
+            ) from e
+        except KeyError as e:
+            raise RuntimeError(
+                f"Unexpected response format from Ollama: {e}"
+            ) from e
         except Exception as e:
-            print(f"Error generating response: {e}")
-            return None
+            raise RuntimeError(
+                f"Error generating response from Ollama: {e}"
+            ) from e
 
     def simplify_text(self, text, topik_level):
         """Simplify Korean text to specified TOPIK level"""
@@ -83,26 +126,35 @@ Return JSON with scores:"""
 
         response = self._generate_response(prompt, system_prompt)
 
-        try:
-            # Extract JSON from response
-            if response:
-                # Try to find JSON in the response
-                start_idx = response.find('{')
-                end_idx = response.rfind('}') + 1
-                if start_idx != -1 and end_idx > start_idx:
-                    json_str = response[start_idx:end_idx]
-                    sentiment_data = json.loads(json_str)
-                    return sentiment_data
-        except Exception as e:
-            print(f"Error parsing sentiment: {e}")
+        if not response:
+            raise ValueError("No response received for sentiment analysis")
 
-        # Return default values if parsing fails
-        return {
-            "positive": 0.5,
-            "technical": 0.5,
-            "social": 0.5,
-            "educational": 0.5
-        }
+        # Extract JSON from response
+        start_idx = response.find('{')
+        end_idx = response.rfind('}') + 1
+
+        if start_idx == -1 or end_idx <= start_idx:
+            raise ValueError(
+                f"No JSON object found in sentiment analysis response. "
+                f"Response: {response[:200]}"
+            )
+
+        try:
+            json_str = response[start_idx:end_idx]
+            sentiment_data = json.loads(json_str)
+
+            # Validate required keys
+            required_keys = ['positive', 'technical', 'social', 'educational']
+            missing_keys = [k for k in required_keys if k not in sentiment_data]
+            if missing_keys:
+                raise ValueError(f"Missing required sentiment keys: {missing_keys}")
+
+            return sentiment_data
+        except json.JSONDecodeError as e:
+            raise ValueError(
+                f"Failed to parse sentiment JSON: {e}. "
+                f"JSON string: {json_str[:200]}"
+            ) from e
 
     def extract_vocabulary(self, simplified_text, topik_level, count=10):
         """Extract essential vocabulary from simplified text"""
@@ -123,62 +175,111 @@ Return JSON array of vocabulary items:"""
 
         response = self._generate_response(prompt, system_prompt)
 
-        try:
-            if response:
-                # Try to find JSON array in the response
-                start_idx = response.find('[')
-                end_idx = response.rfind(']') + 1
-                if start_idx != -1 and end_idx > start_idx:
-                    json_str = response[start_idx:end_idx]
-                    vocab_data = json.loads(json_str)
-                    return vocab_data
-        except Exception as e:
-            print(f"Error parsing vocabulary: {e}")
+        if not response:
+            raise ValueError("No response received for vocabulary extraction")
 
-        return []
+        # Try to find JSON array in the response
+        start_idx = response.find('[')
+        end_idx = response.rfind(']') + 1
+
+        if start_idx == -1 or end_idx <= start_idx:
+            raise ValueError(
+                f"No JSON array found in vocabulary extraction response. "
+                f"Response: {response[:200]}"
+            )
+
+        try:
+            json_str = response[start_idx:end_idx]
+            vocab_data = json.loads(json_str)
+
+            if not isinstance(vocab_data, list):
+                raise ValueError(f"Expected list but got {type(vocab_data)}")
+
+            return vocab_data
+        except json.JSONDecodeError as e:
+            raise ValueError(
+                f"Failed to parse vocabulary JSON: {e}. "
+                f"JSON string: {json_str[:200]}"
+            ) from e
 
     def process_article(self, article_id, topik_levels=None):
         """Process an article for all TOPIK levels"""
         if topik_levels is None:
             topik_levels = [1, 2, 3, 4, 5, 6]
 
+        print(f"\n{'='*60}")
+        print(f"Starting processing for article {article_id}")
+        print(f"TOPIK levels to process: {topik_levels}")
+        print(f"{'='*60}\n")
+
         try:
             article = Article.objects.get(id=article_id)
         except Article.DoesNotExist:
-            print(f"Article {article_id} not found")
+            print(f"ERROR: Article {article_id} not found")
             return False
 
         # Analyze sentiment (only once per article)
         if not hasattr(article, 'sentiment'):
-            sentiment_scores = self.analyze_sentiment(article.original_text)
-            Sentiment.objects.create(
-                article=article,
-                positive_score=sentiment_scores.get('positive', 0.5),
-                technical_score=sentiment_scores.get('technical', 0.5),
-                social_score=sentiment_scores.get('social', 0.5),
-                educational_score=sentiment_scores.get('educational', 0.5)
-            )
+            print(f"[Sentiment Analysis] Starting sentiment analysis...")
+            try:
+                sentiment_scores = self.analyze_sentiment(article.original_text)
+                if not sentiment_scores:
+                    raise ValueError("Sentiment analysis returned no scores")
+
+                Sentiment.objects.create(
+                    article=article,
+                    positive_score=sentiment_scores.get('positive', 0.5),
+                    technical_score=sentiment_scores.get('technical', 0.5),
+                    social_score=sentiment_scores.get('social', 0.5),
+                    educational_score=sentiment_scores.get('educational', 0.5)
+                )
+                print(f"[Sentiment Analysis] ✓ Completed - Scores: {sentiment_scores}")
+            except Exception as e:
+                print(f"[Sentiment Analysis] ✗ FAILED: {e}")
+                raise RuntimeError(
+                    f"Failed to analyze sentiment for article {article_id}: {e}"
+                ) from e
+        else:
+            print(f"[Sentiment Analysis] Skipped (already exists)")
 
         # Process for each TOPIK level
+        print(f"\n{'-'*60}")
+        print(f"Processing TOPIK levels...")
+        print(f"{'-'*60}\n")
+
         for level in topik_levels:
             # Check if already processed
             if ProcessedArticle.objects.filter(article=article, language_level=level).exists():
-                print(f"Article {article_id} already processed for level {level}")
+                print(f"[TOPIK {level}] ⊙ Already processed, skipping")
                 continue
 
-            print(f"Processing article {article_id} for TOPIK level {level}...")
+            print(f"\n[TOPIK {level}] Starting processing...")
 
             # Simplify text
-            simplified = self.simplify_text(article.original_text, level)
-            if not simplified:
-                print(f"Failed to simplify for level {level}")
-                continue
+            print(f"[TOPIK {level}] → Step 1/3: Simplifying text...")
+            try:
+                simplified = self.simplify_text(article.original_text, level)
+                if not simplified or not simplified.strip():
+                    raise ValueError(f"Simplification returned empty text for level {level}")
+                print(f"[TOPIK {level}] ✓ Simplification completed ({len(simplified)} chars)")
+            except Exception as e:
+                print(f"[TOPIK {level}] ✗ Simplification FAILED: {e}")
+                raise RuntimeError(
+                    f"Failed to simplify article {article_id} for TOPIK level {level}: {e}"
+                ) from e
 
             # Translate to English
-            translation = self.translate_to_english(simplified)
-            if not translation:
-                print(f"Failed to translate for level {level}")
-                continue
+            print(f"[TOPIK {level}] → Step 2/3: Translating to English...")
+            try:
+                translation = self.translate_to_english(simplified)
+                if not translation or not translation.strip():
+                    raise ValueError(f"Translation returned empty text for level {level}")
+                print(f"[TOPIK {level}] ✓ Translation completed ({len(translation)} chars)")
+            except Exception as e:
+                print(f"[TOPIK {level}] ✗ Translation FAILED: {e}")
+                raise RuntimeError(
+                    f"Failed to translate article {article_id} for TOPIK level {level}: {e}"
+                ) from e
 
             # Create processed article
             processed = ProcessedArticle.objects.create(
@@ -189,19 +290,40 @@ Return JSON array of vocabulary items:"""
             )
 
             # Extract vocabulary
-            vocab_items = self.extract_vocabulary(simplified, level)
-            for idx, item in enumerate(vocab_items):
-                Vocabulary.objects.create(
-                    processed_article=processed,
-                    word=item.get('word', ''),
-                    definition=item.get('definition', ''),
-                    example_sentence=item.get('example', ''),
-                    order=idx
-                )
+            print(f"[TOPIK {level}] → Step 3/3: Extracting vocabulary...")
+            try:
+                vocab_items = self.extract_vocabulary(simplified, level)
+                if vocab_items is None:
+                    raise ValueError("Vocabulary extraction returned None")
+
+                vocab_count = 0
+                for idx, item in enumerate(vocab_items):
+                    if not item.get('word'):
+                        print(f"[TOPIK {level}] ⚠ Skipping vocabulary item without word: {item}")
+                        continue
+
+                    Vocabulary.objects.create(
+                        processed_article=processed,
+                        word=item.get('word', ''),
+                        definition=item.get('definition', ''),
+                        example_sentence=item.get('example', ''),
+                        order=idx
+                    )
+                    vocab_count += 1
+
+                print(f"[TOPIK {level}] ✓ Vocabulary extraction completed ({vocab_count} words)")
+            except Exception as e:
+                # Vocabulary extraction failure is not critical, just log it
+                print(f"[TOPIK {level}] ⚠ Vocabulary extraction failed (non-critical): {e}")
+
+            print(f"[TOPIK {level}] ✓ COMPLETED successfully")
 
         # Mark article as processed
         article.is_processed = True
         article.save()
 
-        print(f"Successfully processed article {article_id}")
+        print(f"\n{'='*60}")
+        print(f"✓ ALL PROCESSING COMPLETED for article {article_id}")
+        print(f"Successfully processed {len(topik_levels)} TOPIK level(s)")
+        print(f"{'='*60}\n")
         return True

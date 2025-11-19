@@ -68,7 +68,12 @@ class Command(BaseCommand):
                     article_tag = soup.find('article')
                     if article_tag:
                         paragraphs = article_tag.find_all('p')
-                        content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs)
+                        if paragraphs:
+                            # Content is in <p> tags
+                            content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs)
+                        else:
+                            # Content is plain text, get all text from article tag
+                            content = article_tag.get_text(strip=True)
                     else:
                         # Fallback: get all paragraphs
                         paragraphs = soup.find_all('p')
