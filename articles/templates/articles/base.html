@@ -28,7 +28,13 @@
         header {
             background: #2A2D9B;
             color: white;
-            padding: 20px 40px;
+            padding: 20px 0;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -41,7 +47,7 @@
         }
 
         header img.logo {
-            height: 50px;
+            height: 80px;
             width: auto;
         }
 
@@ -140,12 +146,14 @@
 </head>
 <body>
     <header>
-        <img src="{% static 'logos/logo_white.png' %}" alt="SentiSquare" class="logo">
-        <nav>
-            <a href="{% url 'overview' %}">Home</a>
-            <a href="{% url 'import_article' %}">Import Article</a>
-            <a href="/admin/">Admin</a>
-        </nav>
+        <div class="header-container">
+            <img src="{% static 'logos/logo_white.png' %}" alt="SentiSquare" class="logo">
+            <nav>
+                <a href="{% url 'overview' %}">Home</a>
+                <a href="{% url 'import_article' %}">Import Article</a>
+                <a href="/admin/">Admin</a>
+            </nav>
+        </div>
     </header>
 
     <div class="container">

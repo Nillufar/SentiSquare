@@ -349,40 +349,40 @@
         <div class="sentiment-item">
             <div class="sentiment-label">
                 <span>Positive</span>
-                <span>{{ sentiment.positive_score|floatformat:0 }}%</span>
+                <span>{% widthratio sentiment.positive_score 1 100 %}%</span>
             </div>
             <div class="sentiment-bar">
-                <div class="sentiment-fill" style="width: {{ sentiment.positive_score|floatformat:0 }}%"></div>
+                <div class="sentiment-fill" style="width: {% widthratio sentiment.positive_score 1 100 %}%"></div>
             </div>
         </div>
 
         <div class="sentiment-item">
             <div class="sentiment-label">
                 <span>Technical</span>
-                <span>{{ sentiment.technical_score|floatformat:0 }}%</span>
+                <span>{% widthratio sentiment.technical_score 1 100 %}%</span>
             </div>
             <div class="sentiment-bar">
-                <div class="sentiment-fill" style="width: {{ sentiment.technical_score|floatformat:0 }}%"></div>
+                <div class="sentiment-fill" style="width: {% widthratio sentiment.technical_score 1 100 %}%"></div>
             </div>
         </div>
 
         <div class="sentiment-item">
             <div class="sentiment-label">
                 <span>Social Focus</span>
-                <span>{{ sentiment.social_score|floatformat:0 }}%</span>
+                <span>{% widthratio sentiment.social_score 1 100 %}%</span>
             </div>
             <div class="sentiment-bar">
-                <div class="sentiment-fill" style="width: {{ sentiment.social_score|floatformat:0 }}%"></div>
+                <div class="sentiment-fill" style="width: {% widthratio sentiment.social_score 1 100 %}%"></div>
             </div>
         </div>
 
         <div class="sentiment-item">
             <div class="sentiment-label">
                 <span>Educational</span>
-                <span>{{ sentiment.educational_score|floatformat:0 }}%</span>
+                <span>{% widthratio sentiment.educational_score 1 100 %}%</span>
             </div>
             <div class="sentiment-bar">
-                <div class="sentiment-fill" style="width: {{ sentiment.educational_score|floatformat:0 }}%"></div>
+                <div class="sentiment-fill" style="width: {% widthratio sentiment.educational_score 1 100 %}%"></div>
             </div>
         </div>
     </div>
