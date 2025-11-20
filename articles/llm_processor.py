@@ -1,7 +1,18 @@
 import ollama
 import json
+import signal
 from django.conf import settings
 from .models import Article, ProcessedArticle, Sentiment, Vocabulary
+
+
+class TimeoutError(Exception):
+    """Custom timeout exception"""
+    pass
+
+
+def timeout_handler(signum, frame):
+    """Signal handler for timeout"""
+    raise TimeoutError("Operation timed out")
 
 
 class LLMProcessor:
@@ -38,8 +49,8 @@ class LLMProcessor:
                 f"Make sure Ollama is installed and running."
             ) from e
 
-    def _generate_response(self, prompt, system_prompt=None):
-        """Generate response from Ollama"""
+    def _generate_response(self, prompt, system_prompt=None, timeout=None):
+        """Generate response from Ollama with optional timeout"""
         messages = []
         if system_prompt:
             messages.append({
@@ -50,6 +61,12 @@ class LLMProcessor:
             'role': 'user',
             'content': prompt
         })
+
+        # Set up timeout if specified (Unix-based systems only)
+        old_handler = None
+        if timeout is not None:
+            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(timeout)
 
         try:
             response = ollama.chat(
@@ -62,6 +79,8 @@ class LLMProcessor:
                 raise ValueError("Ollama returned empty response")
 
             return content
+        except TimeoutError:
+            raise TimeoutError(f"Request timed out after {timeout} seconds")
         except ollama.ResponseError as e:
             raise RuntimeError(
                 f"Ollama API error: {e}. The model may have failed to generate a response."
@@ -74,6 +93,12 @@ class LLMProcessor:
             raise RuntimeError(
                 f"Error generating response from Ollama: {e}"
             ) from e
+        finally:
+            # Cancel the alarm and restore old handler
+            if timeout is not None:
+                signal.alarm(0)
+                if old_handler is not None:
+                    signal.signal(signal.SIGALRM, old_handler)
 
     def simplify_text(self, text, topik_level):
         """Simplify Korean text to specified TOPIK level"""
@@ -157,7 +182,7 @@ Return JSON with scores:"""
             ) from e
 
     def extract_vocabulary(self, simplified_text, topik_level, count=10):
-        """Extract essential vocabulary from simplified text"""
+        """Extract essential vocabulary from simplified text with 15-second timeout"""
         system_prompt = """You are a Korean language teacher. Extract the most important Korean vocabulary
         words from the text that are appropriate for the specified TOPIK level. For each word, provide:
         1. The Korean word
@@ -173,7 +198,7 @@ Return JSON with scores:"""
 
 Return JSON array of vocabulary items:"""
 
-        response = self._generate_response(prompt, system_prompt)
+        response = self._generate_response(prompt, system_prompt, timeout=15)
 
         if not response:
             raise ValueError("No response received for vocabulary extraction")
@@ -290,7 +315,7 @@ Return JSON array of vocabulary items:"""
             )
 
             # Extract vocabulary
-            print(f"[TOPIK {level}] → Step 3/3: Extracting vocabulary...")
+            print(f"[TOPIK {level}] → Step 3/3: Extracting vocabulary (15s timeout)...")
             try:
                 vocab_items = self.extract_vocabulary(simplified, level)
                 if vocab_items is None:
@@ -312,15 +337,19 @@ Return JSON array of vocabulary items:"""
                     vocab_count += 1
 
                 print(f"[TOPIK {level}] ✓ Vocabulary extraction completed ({vocab_count} words)")
+            except TimeoutError as e:
+                # Vocabulary extraction timed out
+                print(f"[TOPIK {level}] ⚠ Vocabulary extraction timed out after 15 seconds (non-critical)")
             except Exception as e:
                 # Vocabulary extraction failure is not critical, just log it
                 print(f"[TOPIK {level}] ⚠ Vocabulary extraction failed (non-critical): {e}")
 
             print(f"[TOPIK {level}] ✓ COMPLETED successfully")
 
-        # Mark article as processed
-        article.is_processed = True
-        article.save()
+        # Mark article as processed if it has at least one processed level
+        if not article.is_processed:
+            article.is_processed = True
+            article.save()
 
         print(f"\n{'='*60}")
         print(f"✓ ALL PROCESSING COMPLETED for article {article_id}")
