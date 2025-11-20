@@ -32,7 +32,8 @@
         color: #333;
     }
 
-    .form-group input[type="url"],
+    .form-group input[type="file"],
+    .form-group input[type="text"],
     .form-group select {
         width: 100%;
         padding: 12px;
@@ -42,10 +43,30 @@
         transition: border-color 0.3s;
     }
 
-    .form-group input[type="url"]:focus,
+    .form-group input[type="file"]:focus,
+    .form-group input[type="text"]:focus,
     .form-group select:focus {
         outline: none;
         border-color: #667eea;
+    }
+
+    .file-upload-area {
+        border: 2px dashed #e0e0e0;
+        border-radius: 5px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .file-upload-area:hover {
+        border-color: #667eea;
+        background: #f8f9fa;
+    }
+
+    .file-upload-area.drag-over {
+        border-color: #667eea;
+        background: #e7f3ff;
     }
 
     .help-text {
@@ -103,30 +124,45 @@
     <div class="info-box">
         <h3>How to Import Articles</h3>
         <ul>
-            <li>Paste the URL of any Korean news article</li>
+            <li>Upload an HTML file containing a Korean news article</li>
+            <li>Provide a title for the article</li>
             <li>Select the appropriate category</li>
             <li>We'll extract the content and make it available for language learning</li>
-            <li>After importing, you can process it with AI to get simplified versions for all TOPIK levels</li>
+            <li>After importing, you can process it with AI to get simplified versions for TOPIK levels</li>
         </ul>
     </div>
 
     <div class="import-form">
         <h2>Import New Article</h2>
 
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
             <div class="form-group">
-                <label for="url">Article URL</label>
+                <label for="title">Article Title</label>
                 <input
-                    type="url"
-                    id="url"
-                    name="url"
-                    placeholder="https://example.com/korean-article"
+                    type="text"
+                    id="title"
+                    name="title"
+                    placeholder="Enter article title"
                     required
                 >
                 <p class="help-text">
-                    Enter the full URL of the Korean news article you want to import
+                    Provide a descriptive title for the article
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label for="html_file">HTML File</label>
+                <input
+                    type="file"
+                    id="html_file"
+                    name="html_file"
+                    accept=".html,.htm"
+                    required
+                >
+                <p class="help-text">
+                    Upload an HTML file containing the Korean news article
                 </p>
             </div>
 

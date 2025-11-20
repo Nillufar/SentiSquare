@@ -209,6 +209,26 @@
         margin-top: 15px;
     }
 
+    .generate-button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: background 0.3s;
+    }
+
+    .generate-button:hover {
+        background: #5568d3;
+    }
+
+    .generate-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
     .loading {
         text-align: center;
         padding: 40px;
@@ -221,6 +241,20 @@
         padding: 15px;
         margin-bottom: 20px;
         border-radius: 5px;
+    }
+
+    .not-generated {
+        background: #f8f9fa;
+        border: 2px dashed #ccc;
+        padding: 30px;
+        text-align: center;
+        border-radius: 8px;
+        color: #666;
+    }
+
+    .not-generated h4 {
+        color: #333;
+        margin-bottom: 10px;
     }
 
     @media (max-width: 768px) {
@@ -246,16 +280,11 @@
 
     {% if not article.is_processed %}
     <div class="warning">
-        <strong>Note:</strong> This article hasn't been processed yet. Click the button below to process it through AI.
+        <strong>Note:</strong> This article hasn't been processed yet. You can select a TOPIK level below and generate text for specific levels as needed.
     </div>
-    <form method="post" action="{% url 'process_article' article.id %}">
-        {% csrf_token %}
-        <button type="submit" class="btn">Process Article with AI</button>
-    </form>
     {% endif %}
 </div>
 
-{% if article.is_processed %}
 <div class="controls-panel">
     <div class="level-slider-container">
         <label for="level-slider">TOPIK Level:</label>
@@ -266,27 +295,39 @@
     </div>
 </div>
 
-<div class="content-grid">
-    <div class="text-panel">
-        <h3>Simplified Korean (Level <span id="korean-level">{{ current_level }}</span>)</h3>
-        <div class="text-content korean-text" id="korean-text">
-            {% if processed %}
-                {{ processed.simplified_text }}
-            {% else %}
-                <div class="loading">Loading...</div>
-            {% endif %}
+{% if article.is_processed %}
+
+<div id="content-container">
+    <div class="content-grid" id="content-grid" style="{% if not processed %}display: none;{% endif %}">
+        <div class="text-panel">
+            <h3>Simplified Korean (Level <span id="korean-level">{{ current_level }}</span>)</h3>
+            <div class="text-content korean-text" id="korean-text">
+                {% if processed %}
+                    {{ processed.simplified_text }}
+                {% else %}
+                    <div class="loading">Loading...</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="text-panel">
+            <h3>English Translation</h3>
+            <div class="text-content" id="english-text">
+                {% if processed %}
+                    {{ processed.english_translation }}
+                {% else %}
+                    <div class="loading">Loading...</div>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <div class="text-panel">
-        <h3>English Translation</h3>
-        <div class="text-content" id="english-text">
-            {% if processed %}
-                {{ processed.english_translation }}
-            {% else %}
-                <div class="loading">Loading...</div>
-            {% endif %}
-        </div>
+    <div class="not-generated" id="not-generated-panel" style="{% if processed %}display: none;{% endif %}">
+        <h4>Content not generated for Level <span id="not-generated-level">{{ current_level }}</span></h4>
+        <p>This TOPIK level hasn't been generated yet. Click the button below to generate it.</p>
+        <button class="generate-button" id="generate-button" onclick="generateLevel()">
+            Generate Level <span id="generate-level-number">{{ current_level }}</span>
+        </button>
     </div>
 </div>
 
@@ -337,7 +378,7 @@
 </div>
 {% endif %}
 
-<div class="vocabulary-panel">
+<div class="vocabulary-panel" id="vocabulary-panel" style="{% if not processed %}display: none;{% endif %}">
     <h3>Essential Vocabulary (Level <span id="vocab-level">{{ current_level }}</span>)</h3>
     <ul class="vocab-list" id="vocabulary-list">
         {% if vocabulary %}
@@ -372,19 +413,30 @@
 <script>
     const slider = document.getElementById('level-slider');
     const levelDisplay = document.getElementById('level-display');
+    const contentGrid = document.getElementById('content-grid');
+    const notGeneratedPanel = document.getElementById('not-generated-panel');
+    const vocabularyPanel = document.getElementById('vocabulary-panel');
     const koreanText = document.getElementById('korean-text');
     const englishText = document.getElementById('english-text');
     const vocabularyList = document.getElementById('vocabulary-list');
     const koreanLevel = document.getElementById('korean-level');
     const vocabLevel = document.getElementById('vocab-level');
+    const notGeneratedLevel = document.getElementById('not-generated-level');
+    const generateLevelNumber = document.getElementById('generate-level-number');
+    const generateButton = document.getElementById('generate-button');
 
     slider.addEventListener('input', async function() {
         const level = this.value;
         levelDisplay.textContent = 'Level ' + level;
         koreanLevel.textContent = level;
         vocabLevel.textContent = level;
+        notGeneratedLevel.textContent = level;
+        generateLevelNumber.textContent = level;
 
         // Show loading state
+        contentGrid.style.display = 'grid';
+        notGeneratedPanel.style.display = 'none';
+        vocabularyPanel.style.display = 'block';
         koreanText.innerHTML = '<div class="loading">Loading...</div>';
         englishText.innerHTML = '<div class="loading">Loading...</div>';
         vocabularyList.innerHTML = '<div class="loading">Loading vocabulary...</div>';
@@ -395,6 +447,11 @@
             const data = await response.json();
 
             if (data.success) {
+                // Show content panels
+                contentGrid.style.display = 'grid';
+                notGeneratedPanel.style.display = 'none';
+                vocabularyPanel.style.display = 'block';
+
                 koreanText.textContent = data.simplified_text;
                 englishText.textContent = data.english_translation;
 
@@ -415,16 +472,58 @@
                     vocabularyList.innerHTML = '<div class="loading">No vocabulary for this level yet.</div>';
                 }
             } else {
-                koreanText.innerHTML = '<div class="warning">Content not available for this level yet.</div>';
-                englishText.innerHTML = '<div class="warning">Translation not available for this level yet.</div>';
-                vocabularyList.innerHTML = '<div class="warning">Vocabulary not available for this level yet.</div>';
+                // Show not-generated panel
+                contentGrid.style.display = 'none';
+                vocabularyPanel.style.display = 'none';
+                notGeneratedPanel.style.display = 'block';
             }
         } catch (error) {
             console.error('Error fetching level content:', error);
-            koreanText.innerHTML = '<div class="warning">Error loading content.</div>';
-            englishText.innerHTML = '<div class="warning">Error loading translation.</div>';
+            contentGrid.style.display = 'none';
+            vocabularyPanel.style.display = 'none';
+            notGeneratedPanel.style.display = 'block';
         }
     });
+
+    async function generateLevel() {
+        const level = slider.value;
+        generateButton.disabled = true;
+        generateButton.textContent = 'Generating...';
+
+        try {
+            const response = await fetch(`/article/{{ article.id }}/generate-level/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ level: parseInt(level) })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Wait a moment then reload the content
+                setTimeout(() => {
+                    slider.dispatchEvent(new Event('input'));
+                    generateButton.disabled = false;
+                    generateButton.innerHTML = 'Generate Level <span id="generate-level-number">' + level + '</span>';
+                }, 2000);
+            } else {
+                alert('Error generating level: ' + (data.error || 'Unknown error'));
+                generateButton.disabled = false;
+                generateButton.innerHTML = 'Generate Level <span id="generate-level-number">' + level + '</span>';
+            }
+        } catch (error) {
+            console.error('Error generating level:', error);
+            alert('Error generating level. Please try again.');
+            generateButton.disabled = false;
+            generateButton.innerHTML = 'Generate Level <span id="generate-level-number">' + level + '</span>';
+        }
+    }
+
+    // Make generateLevel available globally
+    window.generateLevel = generateLevel;
 </script>
 {% endif %}
 {% endblock %}

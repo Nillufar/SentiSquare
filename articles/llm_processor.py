@@ -346,9 +346,10 @@ Return JSON array of vocabulary items:"""
 
             print(f"[TOPIK {level}] ✓ COMPLETED successfully")
 
-        # Mark article as processed
-        article.is_processed = True
-        article.save()
+        # Mark article as processed if it has at least one processed level
+        if not article.is_processed:
+            article.is_processed = True
+            article.save()
 
         print(f"\n{'='*60}")
         print(f"✓ ALL PROCESSING COMPLETED for article {article_id}")

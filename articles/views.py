@@ -4,9 +4,9 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from .models import Category, Article, ProcessedArticle, Sentiment
 from .llm_processor import LLMProcessor
-import requests
 from bs4 import BeautifulSoup
 import threading
+import json
 
 
 def overview(request):
@@ -103,58 +103,114 @@ def process_article(request, article_id):
     return redirect('article_detail', article_id=article_id)
 
 
+@require_http_methods(["POST"])
+def generate_article_level(request, article_id):
+    """Generate a specific TOPIK level for an article"""
+    article = get_object_or_404(Article, id=article_id)
+
+    try:
+        data = json.loads(request.body)
+        level = data.get('level')
+
+        if not level or not isinstance(level, int) or level < 1 or level > 6:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid level. Must be between 1 and 6.'
+            }, status=400)
+
+        # Check if this level already exists
+        if ProcessedArticle.objects.filter(article=article, language_level=level).exists():
+            return JsonResponse({
+                'success': False,
+                'error': f'Level {level} has already been generated.'
+            }, status=400)
+
+        # Start processing in background thread
+        def process():
+            processor = LLMProcessor()
+            processor.process_article(article_id, topik_levels=[level])
+
+        thread = threading.Thread(target=process)
+        thread.daemon = True
+        thread.start()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Started generating TOPIK level {level}. This may take a minute.'
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON in request body.'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
 @require_http_methods(["GET", "POST"])
 def import_article(request):
-    """Import article from URL"""
+    """Import article from HTML file upload"""
     if request.method == 'POST':
-        url = request.POST.get('url')
+        title = request.POST.get('title')
         category_id = request.POST.get('category')
+        html_file = request.FILES.get('html_file')
 
-        if not url or not category_id:
-            messages.error(request, 'Please provide both URL and category.')
+        if not title or not category_id or not html_file:
+            messages.error(request, 'Please provide title, category, and HTML file.')
+            return redirect('import_article')
+
+        # Validate file type
+        if not html_file.name.endswith(('.html', '.htm')):
+            messages.error(request, 'Please upload an HTML file (.html or .htm).')
             return redirect('import_article')
 
         try:
-            # Fetch the article
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-
-            # Parse HTML
-            soup = BeautifulSoup(response.text, 'html.parser')
-
-            # Try to extract title
-            title = soup.find('h1')
-            title_text = title.get_text(strip=True) if title else 'Imported Article'
+            # Read and parse the HTML file
+            html_content = html_file.read().decode('utf-8')
+            soup = BeautifulSoup(html_content, 'html.parser')
 
             # Try to extract article content
-            # This is a simple approach - you may need to customize based on the website
+            # First try to find article or main tag
             article_body = soup.find('article') or soup.find('main')
             if article_body:
                 paragraphs = article_body.find_all('p')
-                content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs)
+                content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
             else:
-                # Fallback: get all paragraphs
-                paragraphs = soup.find_all('p')
-                content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs[:10])
+                # Fallback: get all paragraphs from body
+                body = soup.find('body')
+                if body:
+                    paragraphs = body.find_all('p')
+                    content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
+                else:
+                    # Last resort: get all paragraphs
+                    paragraphs = soup.find_all('p')
+                    content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
 
-            if not content:
-                messages.error(request, 'Could not extract content from the URL.')
+            if not content or len(content.strip()) < 50:
+                messages.error(request, 'Could not extract sufficient content from the HTML file. Please ensure it contains paragraph tags with Korean text.')
                 return redirect('import_article')
 
             # Create article
             category = get_object_or_404(Category, id=category_id)
             article = Article.objects.create(
-                title=title_text,
+                title=title,
                 category=category,
                 original_text=content,
-                source_url=url
+                source_url=''  # No URL for uploaded files
             )
 
-            messages.success(request, f'Successfully imported article: {title_text}')
+            messages.success(request, f'Successfully imported article: {title}')
             return redirect('article_detail', article_id=article.id)
 
-        except requests.RequestException as e:
-            messages.error(request, f'Error fetching URL: {str(e)}')
+        except UnicodeDecodeError:
+            messages.error(request, 'Error reading file. Please ensure it is a valid UTF-8 encoded HTML file.')
+            return redirect('import_article')
+        except Exception as e:
+            messages.error(request, f'Error processing HTML file: {str(e)}')
             return redirect('import_article')
 
     # GET request
