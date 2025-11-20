@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,6 +38,11 @@
             font-size: 28px;
             font-weight: bold;
             color: #7FC8FF;
+        }
+
+        header img.logo {
+            height: 50px;
+            width: auto;
         }
 
         header p {
@@ -134,7 +140,7 @@
 </head>
 <body>
     <header>
-        <h1>SentiSquare</h1>
+        <img src="{% static 'logos/logo_white.png' %}" alt="SentiSquare" class="logo">
         <nav>
             <a href="{% url 'overview' %}">Home</a>
             <a href="{% url 'import_article' %}">Import Article</a>
