@@ -5,31 +5,39 @@
 {% block extra_css %}
 <style>
     .article-header {
-        background: white;
+        background: rgba(255,255,255,0.1);
         padding: 30px;
-        border-radius: 8px;
+        border-radius: 12px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .article-header h2 {
-        color: #333;
+        color: #AAC4F5;
         font-size: 2rem;
         margin-bottom: 15px;
     }
 
     .article-info {
-        color: #666;
+        color: #EEE;
         font-size: 0.95rem;
         margin-bottom: 20px;
     }
 
+    .article-info a {
+        color: #7FC8FF;
+    }
+
+    .article-info a:hover {
+        color: #AAC4F5;
+    }
+
     .controls-panel {
-        background: white;
+        background: rgba(255,255,255,0.1);
         padding: 25px;
-        border-radius: 8px;
+        border-radius: 12px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .level-slider-container {
@@ -40,7 +48,7 @@
         display: block;
         font-weight: 600;
         margin-bottom: 10px;
-        color: #333;
+        color: white;
     }
 
     .slider-wrapper {
@@ -64,7 +72,7 @@
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: #667eea;
+        background: #7FC8FF;
         cursor: pointer;
     }
 
@@ -72,7 +80,7 @@
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: #667eea;
+        background: #7FC8FF;
         cursor: pointer;
         border: none;
     }
@@ -80,7 +88,7 @@
     .level-display {
         font-size: 1.3rem;
         font-weight: 700;
-        color: #667eea;
+        color: #7FC8FF;
         min-width: 100px;
         text-align: center;
     }
@@ -93,23 +101,23 @@
     }
 
     .text-panel {
-        background: white;
+        background: rgba(255,255,255,0.1);
         padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .text-panel h3 {
-        color: #667eea;
+        color: #7FC8FF;
         margin-bottom: 15px;
         padding-bottom: 10px;
-        border-bottom: 2px solid #667eea;
+        border-bottom: 2px solid #7FC8FF;
     }
 
     .text-content {
         line-height: 1.8;
         font-size: 1.05rem;
-        color: #333;
+        color: white;
         white-space: pre-wrap;
     }
 
@@ -118,15 +126,15 @@
     }
 
     .sentiment-panel {
-        background: white;
+        background: rgba(255,255,255,0.1);
         padding: 25px;
-        border-radius: 8px;
+        border-radius: 12px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .sentiment-panel h3 {
-        color: #667eea;
+        color: #7FC8FF;
         margin-bottom: 20px;
     }
 
@@ -145,31 +153,32 @@
         justify-content: space-between;
         margin-bottom: 5px;
         font-weight: 500;
+        color: white;
     }
 
     .sentiment-bar {
         height: 20px;
-        background: #e0e0e0;
+        background: rgba(255,255,255,0.2);
         border-radius: 10px;
         overflow: hidden;
     }
 
     .sentiment-fill {
         height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, #7FC8FF 0%, #AAC4F5 100%);
         transition: width 0.5s;
         border-radius: 10px;
     }
 
     .vocabulary-panel {
-        background: white;
+        background: rgba(255,255,255,0.1);
         padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .vocabulary-panel h3 {
-        color: #667eea;
+        color: #7FC8FF;
         margin-bottom: 20px;
     }
 
@@ -180,25 +189,25 @@
     .vocab-item {
         padding: 15px;
         margin-bottom: 10px;
-        background: #f8f9fa;
-        border-radius: 5px;
-        border-left: 4px solid #667eea;
+        background: rgba(255,255,255,0.1);
+        border-radius: 8px;
+        border-left: 4px solid #7FC8FF;
     }
 
     .vocab-word {
         font-size: 1.2rem;
         font-weight: 600;
-        color: #333;
+        color: #AAC4F5;
         margin-bottom: 5px;
     }
 
     .vocab-definition {
-        color: #666;
+        color: white;
         margin-bottom: 8px;
     }
 
     .vocab-example {
-        color: #888;
+        color: #EEE;
         font-style: italic;
         font-size: 0.95rem;
     }
@@ -210,50 +219,52 @@
     }
 
     .generate-button {
-        background: #667eea;
+        background: #7FC8FF;
         color: white;
         border: none;
         padding: 10px 20px;
-        border-radius: 5px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 0.95rem;
+        font-weight: bold;
         transition: background 0.3s;
     }
 
     .generate-button:hover {
-        background: #5568d3;
+        background: #63b0e0;
     }
 
     .generate-button:disabled {
-        background: #ccc;
+        background: rgba(255,255,255,0.3);
         cursor: not-allowed;
     }
 
     .loading {
         text-align: center;
         padding: 40px;
-        color: #999;
+        color: #AAC4F5;
     }
 
     .warning {
-        background: #fff3cd;
+        background: rgba(255, 243, 205, 0.2);
         border-left: 4px solid #ffc107;
         padding: 15px;
         margin-bottom: 20px;
-        border-radius: 5px;
+        border-radius: 8px;
+        color: white;
     }
 
     .not-generated {
-        background: #f8f9fa;
-        border: 2px dashed #ccc;
+        background: rgba(255,255,255,0.1);
+        border: 2px dashed rgba(255,255,255,0.3);
         padding: 30px;
         text-align: center;
-        border-radius: 8px;
-        color: #666;
+        border-radius: 12px;
+        color: white;
     }
 
     .not-generated h4 {
-        color: #333;
+        color: #AAC4F5;
         margin-bottom: 10px;
     }
 

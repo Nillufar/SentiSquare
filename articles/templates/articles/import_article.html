@@ -10,14 +10,14 @@
     }
 
     .import-form {
-        background: white;
+        background: rgba(255,255,255,0.1);
         padding: 35px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .import-form h2 {
-        color: #667eea;
+        color: #AAC4F5;
         margin-bottom: 25px;
     }
 
@@ -29,7 +29,7 @@
         display: block;
         font-weight: 600;
         margin-bottom: 8px;
-        color: #333;
+        color: white;
     }
 
     .form-group input[type="file"],
@@ -37,22 +37,29 @@
     .form-group select {
         width: 100%;
         padding: 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 5px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
         font-size: 1rem;
         transition: border-color 0.3s;
+        background: rgba(255,255,255,0.1);
+        color: white;
     }
 
     .form-group input[type="file"]:focus,
     .form-group input[type="text"]:focus,
     .form-group select:focus {
         outline: none;
-        border-color: #667eea;
+        border-color: #7FC8FF;
+    }
+
+    .form-group select option {
+        background: #2A2D9B;
+        color: white;
     }
 
     .file-upload-area {
-        border: 2px dashed #e0e0e0;
-        border-radius: 5px;
+        border: 2px dashed rgba(255,255,255,0.3);
+        border-radius: 8px;
         padding: 20px;
         text-align: center;
         transition: all 0.3s;
@@ -60,28 +67,28 @@
     }
 
     .file-upload-area:hover {
-        border-color: #667eea;
-        background: #f8f9fa;
+        border-color: #7FC8FF;
+        background: rgba(255,255,255,0.05);
     }
 
     .file-upload-area.drag-over {
-        border-color: #667eea;
-        background: #e7f3ff;
+        border-color: #7FC8FF;
+        background: rgba(127, 200, 255, 0.1);
     }
 
     .help-text {
         margin-top: 8px;
         font-size: 0.9rem;
-        color: #666;
+        color: #AAC4F5;
     }
 
     .submit-btn {
         width: 100%;
         padding: 15px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #7FC8FF;
         color: white;
         border: none;
-        border-radius: 5px;
+        border-radius: 8px;
         font-size: 1.1rem;
         font-weight: 600;
         cursor: pointer;
@@ -89,26 +96,27 @@
     }
 
     .submit-btn:hover {
+        background: #63b0e0;
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
     }
 
     .info-box {
-        background: #e7f3ff;
-        border-left: 4px solid #2196F3;
+        background: rgba(255,255,255,0.1);
+        border-left: 4px solid #7FC8FF;
         padding: 20px;
         margin-bottom: 30px;
-        border-radius: 5px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .info-box h3 {
-        color: #1976D2;
+        color: #AAC4F5;
         margin-bottom: 10px;
     }
 
     .info-box ul {
         margin-left: 20px;
-        color: #555;
+        color: white;
     }
 
     .info-box ul li {
