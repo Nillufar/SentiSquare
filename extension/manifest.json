@@ -5,8 +5,18 @@
   "description": "Quickly import the current page URL into a local SentiSquare instance (opens the import form and fills the URL).",
   "permissions": ["tabs", "scripting", "activeTab"],
   "host_permissions": ["http://localhost:8000/*"],
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
   "action": {
     "default_title": "Import to SentiSquare",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon-16.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    }
   }
 }
