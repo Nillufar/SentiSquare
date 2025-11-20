@@ -111,6 +111,33 @@ uv run python manage.py load_articles
    uv run python manage.py createsuperuser
    ```
 
+### Using the `uv` helper (optional)
+
+This repository's README uses the `uv` helper in examples (for example `uv sync` and `uv run ...`). `uv` is not a builtin system tool — it's a small project/venv manager and may not be available on all machines. There are two recommended ways to work with it:
+
+- Preferred (explicit, reproducible): create and activate the local virtual environment and run Django management commands directly:
+
+  ```bash
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python -m pip install --upgrade pip
+  python -m pip install -r requirements.txt   # or install packages from pyproject.toml
+  python manage.py migrate
+  python manage.py runserver
+  ```
+
+- If you prefer to use `uv` (convenience): install `uv` into your environment or into the local `.venv`. Example (local install via our `.venv`):
+
+  ```bash
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install uv
+  uv sync                # will recreate/sync the venv and install pinned deps
+  uv run python manage.py runserver
+  ```
+
+You can also install `uv` system-wide (or via `pipx`) if you want it available without activating `.venv` — but for reproducibility we recommend activating `.venv` first and running the commands from there.
+
 ## Configuration
 
 Edit `config/settings.py` to point to your Ollama host and model:
@@ -247,3 +274,20 @@ Contributions are welcome. Please open issues or pull requests and follow the re
 ## License
 
 This project is released under the MIT License.
+
+## Chrome extension (optional)
+
+A small Chrome extension is included at `extension/` to make importing articles from your browser easier. It opens the local SentiSquare import page (`/import/`) and pre-fills the Article URL field with the current tab's address.
+
+How to load the extension in Chrome/Edge:
+
+1. Open `chrome://extensions/` (or `edge://extensions/`).
+2. Enable _Developer mode_ (top-right).
+3. Click _Load unpacked_ and select the `extension/` folder in this repository.
+4. The extension icon will appear in the toolbar. Browse to a page you want to import and click the extension, then click _Import current page_.
+
+Notes:
+
+- The extension assumes SentiSquare is running locally at `http://localhost:8000`.
+- The extension requires permission to inject a small script into the import page; that's limited to the `http://localhost:8000/*` host in the manifest.
+- If the import page is unreachable or still loading, the extension will retry injection a few times and then show an error.
