@@ -6,18 +6,18 @@ import os
 
 
 class Command(BaseCommand):
-    help = 'Load articles from the data directory'
+    help_str: str = 'Load articles from the data directory'
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         data_dir = settings.DATA_DIR
         loaded_count = 0
 
         # Map directory names to category names
         category_mapping = {
             'startup_knowledge': 'startup_knowledge',
-            'fashion_kbeauty': 'fashion_kbeauty',
+             'fashion_kbeauty': 'fashion_kbeauty',
             'economics': 'economics',
-            'international_relations': 'international_relations',
+             'international_relations': 'international_relations',
             'legal_business': 'legal_business',
         }
 
