@@ -1,0 +1,73 @@
+{% extends "articles/base.html" %}
+
+{% block title %}Logout - SentiSquare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .logout-container {
+        max-width: 600px;
+        margin: 80px auto;
+    }
+
+    .logout-panel {
+        background: rgba(255,255,255,0.1);
+        padding: 50px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        text-align: center;
+    }
+
+    .logout-panel h2 {
+        color: #7FC8FF;
+        margin-bottom: 25px;
+        font-size: 2rem;
+    }
+
+    .logout-panel p {
+        margin-bottom: 35px;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .button-group button,
+    .button-group a {
+        min-width: 150px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="logout-container">
+    <div class="logout-panel">
+        <h2>Come Back Soon!</h2>
+
+        <p>
+            Are you sure you want to logout? You can always come back and continue your Korean learning journey.
+        </p>
+
+        <form method="post" action="{% url 'account_logout' %}">
+            {% csrf_token %}
+
+            {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+            {% endif %}
+
+            <div class="button-group">
+                <button type="submit" class="btn">
+                    Yes, Logout
+                </button>
+                <a href="{% url 'overview' %}" class="btn btn-secondary">
+                    Stay Logged In
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

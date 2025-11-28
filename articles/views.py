@@ -2,11 +2,20 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from .models import Category, Article, ProcessedArticle, Sentiment
 from .llm_processor import LLMProcessor
 from bs4 import BeautifulSoup
 import threading
 import json
+
+
+def home(request):
+    """Redirect to login if not authenticated, otherwise show overview"""
+    if request.user.is_authenticated:
+        return redirect('overview')
+    else:
+        return redirect('account_login')
 
 
 def overview(request):
@@ -85,6 +94,7 @@ def get_article_level(request, article_id, level):
         }, status=404)
 
 
+@login_required
 @require_http_methods(["POST"])
 def process_article(request, article_id):
     """Process an article through LLM"""
@@ -103,6 +113,7 @@ def process_article(request, article_id):
     return redirect('article_detail', article_id=article_id)
 
 
+@login_required
 @require_http_methods(["POST"])
 def generate_article_level(request, article_id):
     """Generate a specific TOPIK level for an article"""
@@ -151,6 +162,7 @@ def generate_article_level(request, article_id):
         }, status=500)
 
 
+@login_required
 @require_http_methods(["GET", "POST"])
 def import_article(request):
     """Import article from HTML file upload"""

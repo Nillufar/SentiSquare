@@ -1,0 +1,242 @@
+{% extends "articles/base.html" %}
+
+{% block title %}Login - SentiSquare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .intro {
+        background: rgba(255,255,255,0.1);
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        text-align: center;
+    }
+
+    .intro h2 {
+        color: #AAC4F5;
+        margin-bottom: 15px;
+        font-size: 2rem;
+    }
+
+    .intro p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .login-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-top: 30px;
+    }
+
+    .info-panel {
+        background: rgba(255,255,255,0.1);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .info-panel h3 {
+        color: #7FC8FF;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .feature-list li {
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        font-size: 1.05rem;
+    }
+
+    .feature-list li:last-child {
+        border-bottom: none;
+    }
+
+    .feature-list li:before {
+        content: "✓ ";
+        color: #7FC8FF;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .login-panel {
+        background: rgba(255,255,255,0.1);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .login-panel h3 {
+        color: #7FC8FF;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        font-size: 14px;
+        background: rgba(255,255,255,0.1);
+        color: white;
+    }
+
+    input[type="text"]::placeholder,
+    input[type="email"]::placeholder,
+    input[type="password"]::placeholder {
+        color: rgba(255,255,255,0.5);
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+        outline: none;
+        border-color: #7FC8FF;
+        background: rgba(255,255,255,0.15);
+    }
+
+    input[type="checkbox"] {
+        margin: 0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .error-text {
+        color: #ff6b6b;
+        margin-top: 5px;
+        font-size: 14px;
+    }
+
+    .links-section {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .links-section p {
+        margin-bottom: 10px;
+    }
+
+    .links-section a {
+        color: #7FC8FF;
+        text-decoration: none;
+    }
+
+    .links-section a:hover {
+        color: #AAC4F5;
+        text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+        .login-container {
+            grid-template-columns: 1fr;
+        }
+
+        .info-panel {
+            order: 2;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="intro">
+    <h2>Welcome to SentiLearn</h2>
+    <p>Your AI-powered Korean language learning platform. Master Korean through news articles tailored to your TOPIK level.</p>
+</div>
+
+<div class="login-container">
+    <div class="info-panel">
+        <h3>Why SentiLearn?</h3>
+        <ul class="feature-list">
+            <li>Articles simplified for all TOPIK levels (1-6)</li>
+            <li>AI-powered translations and vocabulary</li>
+            <li>Sentiment analysis for deeper understanding</li>
+            <li>Real Korean news from multiple categories</li>
+            <li>Track your progress as you learn</li>
+        </ul>
+        <p style="margin-top: 20px; font-size: 0.95rem; opacity: 0.9;">
+            Join thousands of learners improving their Korean reading skills with personalized, AI-adapted content.
+        </p>
+    </div>
+
+    <div class="login-panel">
+        <h3>Login to Your Account</h3>
+
+        <form method="post" action="{% url 'account_login' %}">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="message error" style="margin-bottom: 20px;">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.login.id_for_label }}">Email</label>
+                {{ form.login }}
+                {% if form.login.errors %}
+                    <div class="error-text">
+                        {{ form.login.errors }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">Password</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <div class="error-text">
+                        {{ form.password.errors }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label style="display: flex; align-items: center; font-weight: normal;">
+                    {{ form.remember }}
+                    <span style="margin-left: 8px;">Remember me</span>
+                </label>
+            </div>
+
+            {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+            {% endif %}
+
+            <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">
+                Login
+            </button>
+
+            <div class="links-section">
+                <p>
+                    <a href="{% url 'account_reset_password' %}">Forgot your password?</a>
+                </p>
+                <p>
+                    Don't have an account?
+                    <a href="{% url 'account_signup' %}" style="font-weight: bold;">Sign up for free</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
