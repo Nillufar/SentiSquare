@@ -12,18 +12,17 @@ class TimeoutError(Exception):
 
 def timeout_handler(signum, frame):
     """Signal handler for timeout"""
-    raise TimeoutError("Operation timed out")
+    raise TimeoutError(f"Operation timed out{signum} {frame}")
 
 
 class LLMProcessor:
-    def __init__(self, model=None, host=None):
-        self.model = model or settings.OLLAMA_MODEL
-        self.host = host or settings.OLLAMA_HOST
-        self._validate_ollama()
+    def __init__(self, model: str|None=None, host: str|None=None):
+        self.model: str|None = model or settings.OLLAMA_MODEL
+        self.host: str|None = host or settings.OLLAMA_HOST
+        _ = self._validate_ollama()
 
     def _validate_ollama(self):
         """Validate that Ollama is running and the model is available"""
-        return True
         try:
             # List available models to check if Ollama is running
             models = ollama.list()
@@ -34,24 +33,24 @@ class LLMProcessor:
 
             if not model_found:
                 raise RuntimeError(
-                    f"Model '{self.model}' not found in Ollama. "
-                    f"Available models: {', '.join(available_models)}. "
+                    f"Model '{self.model}' not found in Ollama. " +
+                    f"Available models: {', '.join(available_models)}. " +
                     f"Please run: ollama pull {self.model}"
                 )
         except ollama.ResponseError as e:
             raise RuntimeError(
-                f"Failed to connect to Ollama: {e}. "
+                f"Failed to connect to Ollama: {e}. " +
                 f"Make sure Ollama is running at {self.host}"
             ) from e
         except Exception as e:
             raise RuntimeError(
-                f"Failed to validate Ollama setup: {e}. "
+                f"Failed to validate Ollama setup: {e}. " +
                 f"Make sure Ollama is installed and running."
             ) from e
 
-    def _generate_response(self, prompt, system_prompt=None, timeout=None):
+    def _generate_response(self, prompt: str, system_prompt: str|None=None, timeout=None):
         """Generate response from Ollama with optional timeout"""
-        messages = []
+        messages: list[dict[str,str]] = []
         if system_prompt:
             messages.append({
                 'role': 'system',
@@ -100,7 +99,7 @@ class LLMProcessor:
                 if old_handler is not None:
                     signal.signal(signal.SIGALRM, old_handler)
 
-    def simplify_text(self, text, topik_level):
+    def simplify_text(self, text: str, topik_level: str) -> str:
         """Simplify Korean text to specified TOPIK level"""
         system_prompt = """You are a Korean language expert. Your task is to simplify Korean text
         to match specific TOPIK (Test of Proficiency in Korean) levels.
@@ -118,7 +117,7 @@ Simplified text (TOPIK Level {topik_level}):"""
 
         return self._generate_response(prompt, system_prompt)
 
-    def translate_to_english(self, korean_text):
+    def translate_to_english(self, korean_text: str) -> str:
         """Translate Korean text to English"""
         system_prompt = """You are a professional Korean-English translator.
         Provide accurate, natural-sounding English translations that preserve the meaning and tone of the original Korean text.
@@ -132,7 +131,7 @@ English translation:"""
 
         return self._generate_response(prompt, system_prompt)
 
-    def analyze_sentiment(self, text):
+    def analyze_sentiment(self, text: str):
         """Analyze sentiment dimensions of the article"""
         system_prompt = """You are a text analysis expert. Analyze Korean text across four dimensions:
         1. Positive (positivity/optimism vs negativity/pessimism)
@@ -165,7 +164,7 @@ Return JSON with scores:"""
             )
 
         try:
-            json_str = response[start_idx:end_idx]
+            json_str: str = response[start_idx:end_idx]
             sentiment_data = json.loads(json_str)
 
             # Validate required keys
@@ -177,11 +176,11 @@ Return JSON with scores:"""
             return sentiment_data
         except json.JSONDecodeError as e:
             raise ValueError(
-                f"Failed to parse sentiment JSON: {e}. "
+                f"Failed to parse sentiment JSON: {e}. " +
                 f"JSON string: {json_str[:200]}"
             ) from e
 
-    def extract_vocabulary(self, simplified_text, topik_level, count=10):
+    def extract_vocabulary(self, simplified_text: str, topik_level: int, count: int=10):
         """Extract essential vocabulary from simplified text with 15-second timeout"""
         system_prompt = """You are a Korean language teacher. Extract the most important Korean vocabulary
         words from the text that are appropriate for the specified TOPIK level. For each word, provide:
@@ -198,7 +197,7 @@ Return JSON with scores:"""
 
 Return JSON array of vocabulary items:"""
 
-        response = self._generate_response(prompt, system_prompt, timeout=15)
+        response: str = self._generate_response(prompt, system_prompt, timeout=15)
 
         if not response:
             raise ValueError("No response received for vocabulary extraction")
@@ -209,7 +208,7 @@ Return JSON array of vocabulary items:"""
 
         if start_idx == -1 or end_idx <= start_idx:
             raise ValueError(
-                f"No JSON array found in vocabulary extraction response. "
+                f"No JSON array found in vocabulary extraction response. " + 
                 f"Response: {response[:200]}"
             )
 
@@ -223,11 +222,11 @@ Return JSON array of vocabulary items:"""
             return vocab_data
         except json.JSONDecodeError as e:
             raise ValueError(
-                f"Failed to parse vocabulary JSON: {e}. "
+                f"Failed to parse vocabulary JSON: {e}. " +
                 f"JSON string: {json_str[:200]}"
             ) from e
 
-    def process_article(self, article_id, topik_levels=None):
+    def process_article(self, article_id: int, topik_levels: list[int]|None=None):
         """Process an article for all TOPIK levels"""
         if topik_levels is None:
             topik_levels = [1, 2, 3, 4, 5, 6]

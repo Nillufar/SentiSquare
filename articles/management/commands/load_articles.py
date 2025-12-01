@@ -3,13 +3,14 @@ from django.conf import settings
 from articles.models import Category, Article
 from bs4 import BeautifulSoup
 import os
+import pathlib
 
 
 class Command(BaseCommand):
     help_str: str = 'Load articles from the data directory'
 
     def handle(self, *args, **options) -> None:
-        data_dir = settings.DATA_DIR
+        data_dir: pathlib.Path = settings.DATA_DIR # ignore: type
         loaded_count = 0
 
         # Map directory names to category names
@@ -86,7 +87,7 @@ class Command(BaseCommand):
                         continue
 
                     # Create article
-                    article = Article.objects.create(
+                    _ = Article.objects.create(
                         title=title,
                         category=category,
                         original_text=content,

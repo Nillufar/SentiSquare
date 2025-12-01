@@ -68,7 +68,7 @@ class ProcessedArticle(models.Model):
 
     @override
     def __str__(self) -> str:
-        title: str = self.article.title #pyright: ignore[reportAttributeAccessIssue]
+        title = self.article.title # pyright: ignore[reportAttributeAccessIssue]
         return f"{title} - Level {self.language_level}" 
 
 @final
