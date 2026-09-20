@@ -10,7 +10,7 @@ class Command(BaseCommand):
     help_str: str = 'Load articles from the data directory'
 
     def handle(self, *args, **options) -> None:
-        data_dir: pathlib.Path = settings.DATA_DIR # ignore: type
+        data_dir: pathlib.Path = settings.DATA_DIR
         loaded_count = 0
 
         # Map directory names to category names

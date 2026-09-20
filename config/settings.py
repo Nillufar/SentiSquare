@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -135,11 +135,11 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Ollama Configuration
-OLLAMA_HOST = "http://localhost:11434"
-OLLAMA_MODEL = "gemma3:latest"  # Change this to your preferred model
+OLLAMA_HOST: str = "http://192.168.178.23:11434"
+OLLAMA_MODEL: str = "gemma4:31b"  # Change this to your preferred model
 
 # Data directory
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR: Path = BASE_DIR / "data"
 
 # Django Allauth Configuration
 SITE_ID = 1

@@ -17,8 +17,8 @@ def timeout_handler(signum, frame):
 
 class LLMProcessor:
     def __init__(self, model: str|None=None, host: str|None=None):
-        self.model: str|None = model or settings.OLLAMA_MODEL
-        self.host: str|None = host or settings.OLLAMA_HOST
+        self.model: str = model or settings.OLLAMA_MODEL  # pyright: ignore[reportAny]
+        self.host: str = host or settings.OLLAMA_HOST  # pyright: ignore[reportAny]
         _ = self._validate_ollama()
 
     def _validate_ollama(self):
@@ -48,7 +48,7 @@ class LLMProcessor:
                 f"Make sure Ollama is installed and running."
             ) from e
 
-    def _generate_response(self, prompt: str, system_prompt: str|None=None, timeout=None):
+    def _generate_response(self, prompt: str, system_prompt: str|None=None, timeout=None) -> str:
         """Generate response from Ollama with optional timeout"""
         messages: list[dict[str,str]] = []
         if system_prompt:
@@ -65,14 +65,11 @@ class LLMProcessor:
         old_handler = None
         if timeout is not None:
             old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(timeout)
+            _ = signal.alarm(timeout)
 
         try:
-            response = ollama.chat(
-                    model="gemma3:latest",
-                messages=messages
-            )
-            content = response['message']['content']
+            response = ollama.chat(model=self.model, messages=messages)  # pyright: ignore[reportUnknownMemberType]
+            content: str = response['message']['content']
 
             if not content or not content.strip():
                 raise ValueError("Ollama returned empty response")
@@ -99,7 +96,7 @@ class LLMProcessor:
                 if old_handler is not None:
                     signal.signal(signal.SIGALRM, old_handler)
 
-    def simplify_text(self, text: str, topik_level: str) -> str:
+    def simplify_text(self, text: str, topik_level: int) -> str:
         """Simplify Korean text to specified TOPIK level"""
         system_prompt = """You are a Korean language expert. Your task is to simplify Korean text
         to match specific TOPIK (Test of Proficiency in Korean) levels.
@@ -131,7 +128,7 @@ English translation:"""
 
         return self._generate_response(prompt, system_prompt)
 
-    def analyze_sentiment(self, text: str):
+    def analyze_sentiment(self, text: str) -> str:
         """Analyze sentiment dimensions of the article"""
         system_prompt = """You are a text analysis expert. Analyze Korean text across four dimensions:
         1. Positive (positivity/optimism vs negativity/pessimism)
@@ -148,23 +145,24 @@ English translation:"""
 
 Return JSON with scores:"""
 
-        response = self._generate_response(prompt, system_prompt)
+        response: str = self._generate_response(prompt, system_prompt)
 
         if not response:
             raise ValueError("No response received for sentiment analysis")
 
         # Extract JSON from response
-        start_idx = response.find('{')
-        end_idx = response.rfind('}') + 1
+        start_idx: int = response.find('{')
+        end_idx: int = response.rfind('}') + 1
 
         if start_idx == -1 or end_idx <= start_idx:
             raise ValueError(
-                f"No JSON object found in sentiment analysis response. "
+                f"No JSON object found in sentiment analysis response. " +
                 f"Response: {response[:200]}"
             )
 
+        json_str: str|None
         try:
-            json_str: str = response[start_idx:end_idx]
+            json_str = response[start_idx:end_idx]
             sentiment_data = json.loads(json_str)
 
             # Validate required keys
@@ -177,7 +175,7 @@ Return JSON with scores:"""
         except json.JSONDecodeError as e:
             raise ValueError(
                 f"Failed to parse sentiment JSON: {e}. " +
-                f"JSON string: {json_str[:200]}"
+                f"JSON string: {json_str[:200] if json_str else "failed"}"  # pyright: ignore[reportPossiblyUnboundVariable]
             ) from e
 
     def extract_vocabulary(self, simplified_text: str, topik_level: int, count: int=10):
@@ -223,7 +221,7 @@ Return JSON array of vocabulary items:"""
         except json.JSONDecodeError as e:
             raise ValueError(
                 f"Failed to parse vocabulary JSON: {e}. " +
-                f"JSON string: {json_str[:200]}"
+                f"JSON string: {json_str[:200]}"  # pyright: ignore[reportPossiblyUnboundVariable]
             ) from e
 
     def process_article(self, article_id: int, topik_levels: list[int]|None=None):
@@ -250,12 +248,12 @@ Return JSON array of vocabulary items:"""
                 if not sentiment_scores:
                     raise ValueError("Sentiment analysis returned no scores")
 
-                Sentiment.objects.create(
+                _ = Sentiment.objects.create(
                     article=article,
-                    positive_score=sentiment_scores.get('positive', 0.5),
-                    technical_score=sentiment_scores.get('technical', 0.5),
-                    social_score=sentiment_scores.get('social', 0.5),
-                    educational_score=sentiment_scores.get('educational', 0.5)
+                    positive_score=sentiment_scores.get('positive', 0.5),  # pyright: ignore[reportAttributeAccessIssue]
+                    technical_score=sentiment_scores.get('technical', 0.5),  # pyright: ignore[reportAttributeAccessIssue]
+                    social_score=sentiment_scores.get('social', 0.5),  # pyright: ignore[reportAttributeAccessIssue]
+                    educational_score=sentiment_scores.get('educational', 0.5)  # pyright: ignore[reportAttributeAccessIssue]
                 )
                 print(f"[Sentiment Analysis] ✓ Completed - Scores: {sentiment_scores}")
             except Exception as e:

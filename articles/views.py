@@ -1,16 +1,19 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpRequest, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import QuerySet
+
 from .models import Category, Article, ProcessedArticle, Sentiment
 from .llm_processor import LLMProcessor
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 import threading
 import json
+from typing import Any
 
 
-def home(request):
+def home(request: HttpRequest) -> HttpResponse:
     """Redirect to login if not authenticated, otherwise show overview"""
     if request.user.is_authenticated:
         return redirect('overview')
@@ -18,45 +21,45 @@ def home(request):
         return redirect('account_login')
 
 
-def overview(request):
+def overview(request: HttpRequest) -> HttpResponse:
     """Display overview page with categories and articles"""
-    categories = Category.objects.prefetch_related('articles').all()
+    categories: QuerySet[Category] = Category.objects.prefetch_related('articles').all()
     return render(request, 'articles/overview.html', {
         'categories': categories
     })
 
 
-def article_detail(request, article_id):
+def article_detail(request: HttpRequest, article_id: int) -> HttpResponse:
     """Display article detail with language level slider"""
-    article = get_object_or_404(Article, id=article_id)
+    article: Article = get_object_or_404(Article, id=article_id)
 
     # Get default language level from query param or use 3
-    default_level = int(request.GET.get('level', 3))
+    default_level: int = int(request.GET.get('level', 3))
 
     # Get processed version for this level
-    processed = None
-    vocabulary = []
+    processed: ProcessedArticle|None = None
+    vocabulary: QuerySet[Any] = ProcessedArticle.objects.none()
     if article.is_processed:
         try:
             processed = ProcessedArticle.objects.get(
                 article=article,
                 language_level=default_level
             )
-            vocabulary = processed.vocabulary_items.all()
+            vocabulary = processed.vocabulary_items.all()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
         except ProcessedArticle.DoesNotExist:
             pass
 
     # Get sentiment if available
-    sentiment = None
+    sentiment: Sentiment|None = None
     if hasattr(article, 'sentiment'):
-        sentiment = article.sentiment
+        sentiment = article.sentiment  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
 
     # Get all available levels for this article
-    available_levels = ProcessedArticle.objects.filter(
+    available_levels = ProcessedArticle.objects.filter(  # pyright: ignore[reportAssignmentType]
         article=article
     ).values_list('language_level', flat=True)
 
-    context = {
+    context: dict[str, Any] = {
         'article': article,
         'processed': processed,
         'vocabulary': vocabulary,
@@ -68,16 +71,16 @@ def article_detail(request, article_id):
     return render(request, 'articles/article_detail.html', context)
 
 
-def get_article_level(request, article_id, level):
+def get_article_level(request: HttpRequest, article_id: int, level: int) -> JsonResponse:
     """AJAX endpoint to get article content for specific level"""
-    article = get_object_or_404(Article, id=article_id)
+    article: Article = get_object_or_404(Article, id=article_id)
 
     try:
-        processed = ProcessedArticle.objects.get(
+        processed: ProcessedArticle = ProcessedArticle.objects.get(
             article=article,
             language_level=level
         )
-        vocabulary = list(processed.vocabulary_items.values(
+        vocabulary: list[dict[str, Any]] = list(processed.vocabulary_items.values(  # pyright: ignore[reportAttributeAccessIssue]
             'word', 'definition', 'example_sentence'
         ))
 
@@ -96,16 +99,16 @@ def get_article_level(request, article_id, level):
 
 @login_required
 @require_http_methods(["POST"])
-def process_article(request, article_id):
+def process_article(request: HttpRequest, article_id: int) -> HttpResponse:
     """Process an article through LLM"""
-    article = get_object_or_404(Article, id=article_id)
+    article: Article = get_object_or_404(Article, id=article_id)
 
     # Start processing in background thread
-    def process():
-        processor = LLMProcessor()
+    def process() -> None:
+        processor: LLMProcessor = LLMProcessor()
         processor.process_article(article_id)
 
-    thread = threading.Thread(target=process)
+    thread: threading.Thread = threading.Thread(target=process)
     thread.daemon = True
     thread.start()
 
@@ -115,13 +118,13 @@ def process_article(request, article_id):
 
 @login_required
 @require_http_methods(["POST"])
-def generate_article_level(request, article_id):
+def generate_article_level(request: HttpRequest, article_id: int) -> JsonResponse:
     """Generate a specific TOPIK level for an article"""
-    article = get_object_or_404(Article, id=article_id)
+    article: Article = get_object_or_404(Article, id=article_id)
 
     try:
-        data = json.loads(request.body)
-        level = data.get('level')
+        data: dict[str, Any] = json.loads(request.body)
+        level: int|None = data.get('level')
 
         if not level or not isinstance(level, int) or level < 1 or level > 6:
             return JsonResponse({
@@ -137,11 +140,11 @@ def generate_article_level(request, article_id):
             }, status=400)
 
         # Start processing in background thread
-        def process():
-            processor = LLMProcessor()
-            processor.process_article(article_id, topik_levels=[level])
+        def process() -> None:
+            processor: LLMProcessor = LLMProcessor()
+            _ = processor.process_article(article_id, topik_levels=[level])
 
-        thread = threading.Thread(target=process)
+        thread: threading.Thread = threading.Thread(target=process)
         thread.daemon = True
         thread.start()
 
@@ -164,11 +167,11 @@ def generate_article_level(request, article_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def import_article(request):
+def import_article(request: HttpRequest) -> HttpResponse:
     """Import article from HTML file upload"""
     if request.method == 'POST':
-        title = request.POST.get('title')
-        category_id = request.POST.get('category')
+        title: str|None = request.POST.get('title')
+        category_id: str|None = request.POST.get('category')
         html_file = request.FILES.get('html_file')
 
         if not title or not category_id or not html_file:
@@ -176,24 +179,26 @@ def import_article(request):
             return redirect('import_article')
 
         # Validate file type
-        if not html_file.name.endswith(('.html', '.htm')):
+        html_file_name: str = html_file.name  # pyright: ignore[reportAssignmentType]
+        if html_file_name.endswith(('.html', '.htm')):
             messages.error(request, 'Please upload an HTML file (.html or .htm).')
             return redirect('import_article')
 
         try:
             # Read and parse the HTML file
-            html_content = html_file.read().decode('utf-8')
-            soup = BeautifulSoup(html_content, 'html.parser')
+            html_content: str = html_file.read().decode('utf-8')
+            soup: BeautifulSoup = BeautifulSoup(html_content, 'html.parser')
 
             # Try to extract article content
             # First try to find article or main tag
-            article_body = soup.find('article') or soup.find('main')
+            article_body: Tag|None = soup.find('article') or soup.find('main')
+            content: str
             if article_body:
-                paragraphs = article_body.find_all('p')
+                paragraphs: list[Tag] = article_body.find_all('p')
                 content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
             else:
                 # Fallback: get all paragraphs from body
-                body = soup.find('body')
+                body: Tag|None = soup.find('body')
                 if body:
                     paragraphs = body.find_all('p')
                     content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
@@ -207,8 +212,8 @@ def import_article(request):
                 return redirect('import_article')
 
             # Create article
-            category = get_object_or_404(Category, id=category_id)
-            article = Article.objects.create(
+            category: Category = get_object_or_404(Category, id=category_id)
+            article: Article = Article.objects.create(
                 title=title,
                 category=category,
                 original_text=content,
@@ -216,7 +221,7 @@ def import_article(request):
             )
 
             messages.success(request, f'Successfully imported article: {title}')
-            return redirect('article_detail', article_id=article.id)
+            return redirect('article_detail', article_id=article.id)  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
 
         except UnicodeDecodeError:
             messages.error(request, 'Error reading file. Please ensure it is a valid UTF-8 encoded HTML file.')
@@ -226,7 +231,7 @@ def import_article(request):
             return redirect('import_article')
 
     # GET request
-    categories = Category.objects.all()
+    categories: QuerySet[Category] = Category.objects.all()
     return render(request, 'articles/import_article.html', {
         'categories': categories
     })
