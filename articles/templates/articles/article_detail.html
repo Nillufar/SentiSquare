@@ -291,7 +291,12 @@
 
     {% if not article.is_processed %}
     <div class="warning">
-        <strong>Note:</strong> This article hasn't been processed yet. You can select a TOPIK level below and generate text for specific levels as needed.
+        <strong>Note:</strong> This article hasn't been processed yet.
+        {% if user.is_authenticated %}
+        You can select a TOPIK level below and generate text for specific levels as needed.
+        {% else %}
+        <a href="{% url 'account_login' %}?next={{ request.path }}" style="color: #7FC8FF; text-decoration: underline;">Login</a> to process this article.
+        {% endif %}
     </div>
     {% endif %}
 </div>
@@ -335,10 +340,14 @@
 
     <div class="not-generated" id="not-generated-panel" style="{% if processed %}display: none;{% endif %}">
         <h4>Content not generated for Level <span id="not-generated-level">{{ current_level }}</span></h4>
+        {% if user.is_authenticated %}
         <p>This TOPIK level hasn't been generated yet. Click the button below to generate it.</p>
         <button class="generate-button" id="generate-button" onclick="generateLevel()">
             Generate Level <span id="generate-level-number">{{ current_level }}</span>
         </button>
+        {% else %}
+        <p>This TOPIK level hasn't been generated yet. <a href="{% url 'account_login' %}?next={{ request.path }}" style="color: #7FC8FF; text-decoration: underline;">Login</a> to generate it.</p>
+        {% endif %}
     </div>
 </div>
 

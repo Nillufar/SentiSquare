@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -37,6 +37,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",  # Required by allauth
+
+    # Third-party apps
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    # Add social providers here in the future, e.g.:
+    # "allauth.socialaccount.providers.google",
+
+    # Project apps
     "articles",
 ]
 
@@ -48,6 +58,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",  # Required by allauth
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -124,8 +135,32 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Ollama Configuration
-OLLAMA_HOST = "http://localhost:11434"
-OLLAMA_MODEL = "gemma3:latest"  # Change this to your preferred model
+OLLAMA_HOST: str = "http://192.168.178.23:11434"
+OLLAMA_MODEL: str = "gemma4:31b"  # Change this to your preferred model
 
 # Data directory
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR: Path = BASE_DIR / "data"
+
+# Django Allauth Configuration
+SITE_ID = 1
+
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of allauth
+    'django.contrib.auth.backends.ModelBackend',
+    # allauth specific authentication methods, such as login by email
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Allauth settings (using new configuration format)
+ACCOUNT_LOGIN_METHODS = {'email'}  # Use email for login (not username)
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'email2*', 'password1*', 'password2*']  # Required signup fields
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Can be 'mandatory', 'optional', or 'none'
+ACCOUNT_SESSION_REMEMBER = True
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/overview/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+
+# Email backend (for development - prints emails to console)
+# In production, configure with SMTP settings
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

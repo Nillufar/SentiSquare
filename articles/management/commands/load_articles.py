@@ -3,21 +3,22 @@ from django.conf import settings
 from articles.models import Category, Article
 from bs4 import BeautifulSoup
 import os
+import pathlib
 
 
 class Command(BaseCommand):
-    help = 'Load articles from the data directory'
+    help_str: str = 'Load articles from the data directory'
 
-    def handle(self, *args, **options):
-        data_dir = settings.DATA_DIR
+    def handle(self, *args, **options) -> None:
+        data_dir: pathlib.Path = settings.DATA_DIR
         loaded_count = 0
 
         # Map directory names to category names
         category_mapping = {
             'startup_knowledge': 'startup_knowledge',
-            'fashion_kbeauty': 'fashion_kbeauty',
+             'fashion_kbeauty': 'fashion_kbeauty',
             'economics': 'economics',
-            'international_relations': 'international_relations',
+             'international_relations': 'international_relations',
             'legal_business': 'legal_business',
         }
 
@@ -86,7 +87,7 @@ class Command(BaseCommand):
                         continue
 
                     # Create article
-                    article = Article.objects.create(
+                    _ = Article.objects.create(
                         title=title,
                         category=category,
                         original_text=content,

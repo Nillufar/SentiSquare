@@ -16,13 +16,18 @@ body {
 
 /* HEADER */
 header {
+  background: #2A2D9B;
+  padding: 20px 0;
+}
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 40px;
-  background: #2A2D9B;
 }
-.logo { font-size: 28px; color: #7FC8FF; font-weight: bold; }
+.logo { font-size: 36px; color: #7FC8FF; font-weight: bold; }
 .cta { background: #7FC8FF; padding: 10px 20px; border-radius: 8px; text-decoration: none; }
 
 /* HERO */
@@ -114,8 +119,10 @@ header {
 <body>
 
 <header>
-  <div class="logo">SemiLearn</div>
-  <a href="#" class="cta">Get Started</a>
+  <div class="header-container">
+    <div class="logo">SemiLearn</div>
+    <a href="#" class="cta">Get Started</a>
+  </div>
 </header>
 
 <section class="hero">
